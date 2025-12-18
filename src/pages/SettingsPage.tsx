@@ -67,7 +67,74 @@ function SettingsPage() {
       label: "ClanGen Dark (Partially Complete)",
       value: "theme-clangen-dark"
     },
+    {
+      label: "Custom Theme",
+      value: "theme-custom"
+    },
   ];
+
+  const [customTheme, setCustomTheme] = useState<Record<string, any>>({
+    ["--page-background-color"]: "rgb(56,50,38)",
+    ["--text-color"]: "black",
+    ["--link-color"]: "rgb(106, 57, 69)",
+    ["--content-background-color"]: "white",
+
+    ["--navbar-background-color"]: "#655934",
+    ["--navbar-text-color"]: "#EFE5CE",
+    ["--navbar-hovered-text-color"]: "rgb(48,41,28)",
+
+    ["--breadcrumbs-background-color"]: "rgb(234, 234, 234)",
+    ["--cat-display-hovered-background-color"]: "#EFE5CE",
+
+    ["--progress-bar-bg"]: "rgb(231, 231, 231)",
+    ["--progress-bar-fill"]: "#80bc08",
+
+    ["--icon-button-text-color"]: "darkgray",
+    ["--icon-button-hovered-text-color"]: "gray",
+
+    ["--button-background-color"]: "#655934",
+    ["--button-hovered-background-color"]: "rgb(82, 73, 55)",
+    ["--button-text-color"]: "#EFE5CE",
+    ["--button-disabled-background-color"]: "#938764",
+
+    ["--button-secondary-background-color"]: "#EFE5CE",
+    ["--button-secondary-hovered-background-color"]: "#e5c680",
+    ["--button-secondary-text-color"]: "#655934",
+
+    ["--summary-background-color"]: "#EFE5CE"
+  });
+
+  const [customThemeCSS, setCustomThemeCSS] = useState<string>("");
+
+  function formatPropertyName(propName: string) {
+    return propName
+    .substring(2)
+    .replace(/-/g, ' ')
+    .replace(/(^|\s)[a-z]/gi, l => l.toUpperCase());
+  }
+
+  function setCustomThemeProperty(propName: string, value: any) {
+    setCustomTheme({
+      ...customTheme,
+      [propName]: value
+    });
+  }
+
+  function loadCustomTheme() {
+    let style = getComputedStyle(document.documentElement);
+    Object.keys(customTheme).map(propName => {
+      setCustomThemeProperty(propName, style.getPropertyValue(propName));
+    });
+  }
+
+  function generateCustomThemeCSS() {
+    let finalCSS = ".theme-custom {\n";
+    Object.keys(customTheme).map(propName => {
+      finalCSS = finalCSS.concat(`${propName}: ${customTheme[propName]};\n`);
+    });
+    finalCSS = finalCSS.concat(`${customThemeCSS}\n}`);
+    return finalCSS;
+  }
 
   useEffect(() => {
     document.title = "Settings | ClanGen Simulator";
@@ -86,6 +153,8 @@ function SettingsPage() {
     } else {
       setSiteTheme("auto");
     }
+
+    loadCustomTheme();
 
     const storedCss = localStorage.getItem("custom-css");
     if (storedCss) {
@@ -165,10 +234,38 @@ function SettingsPage() {
       />
       <div>
         <fieldset>
-          <legend>Custom CSS</legend>
-          <textarea rows={10} cols={50} value={customCss} onChange={e => setCustomCss(e.target.value)} style={{resize: "none", width: "98%"}}></textarea>
+          <legend>Custom Theme Settings</legend>
           
-          <p>Your custom CSS will be injected onto every page except for this one. For your safety, please only input CSS that you 100% trust.</p>
+          <fieldset className="custom-theme-editor-category">
+            <legend>Colors</legend>
+            {
+              Object.keys(customTheme).map(propName => {
+                return (
+                  <div className="custom-theme-color-select">
+                    <input type="color" name={propName} id={propName} 
+                      value={customTheme[propName]} 
+                      onChange={e => setCustomThemeProperty(propName, e.target.value)}
+                    />
+                    <label htmlFor={propName}>{formatPropertyName(propName)}</label>
+                  </div>
+                )
+              })
+            }
+          </fieldset>
+
+          <fieldset className="custom-theme-editor-category">
+            <legend>Custom Theme Extra CSS</legend>
+            <textarea rows={10} cols={50} value={customThemeCSS} onChange={e => setCustomThemeCSS(e.target.value)} style={{resize: "none", width: "98%"}}></textarea>
+          </fieldset>
+
+          <hr />
+
+          <fieldset>
+            <legend>Global Custom CSS</legend>
+            <textarea rows={10} cols={50} value={customCss} onChange={e => setCustomCss(e.target.value)} style={{resize: "none", width: "98%"}}></textarea>
+            
+            <p>Your custom CSS will be injected onto every page except for this one. For your safety, please only input CSS that you 100% trust.</p>
+          </fieldset>
         </fieldset>
       </div>
       <div className="submit">
