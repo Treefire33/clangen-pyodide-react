@@ -215,21 +215,23 @@ function CatSearch({
         </div>
         <div className="cat-search-page-controls button-row">
           <button tabIndex={0} 
-            onClick={() => appendRandom()} 
+            onClick={() => appendRandom(1, maxSelection == 1)} 
             disabled={selectedCats.length == maxSelection}
           >
-            Add Random
+            {maxSelection > 1 ? "Add Random" : "Select Random"}
           </button>
-          <button tabIndex={0} 
-            onClick={() => appendRandom(maxSelection, true)}
-          >
-            Select Random Group
-          </button>
+          {maxSelection > 1 &&
+            <button tabIndex={0} 
+              onClick={() => appendRandom(maxSelection, true)}
+            >
+              Select Random Group
+            </button>
+          }
           <button tabIndex={0}
             onClick={() => setSelectedCats([])} 
             disabled={selectedCats.length == 0}
           >
-            Deselect All
+            {maxSelection > 1 ? "Deselect All" : "Deselect"}
           </button>
         </div>
       </div>

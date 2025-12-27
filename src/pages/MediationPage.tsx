@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Cat } from "../python/types";
 import { clangenRunner } from "../python/clangenRunner";
-import Select from "../components/generic/Select";
-import { SelectOption } from "../components/generic/Select";
 import Checkbox from "../components/generic/Checkbox";
 import BasePage from "../layout/BasePage";
 
 import confusedCat from "../assets/images/gen_med_newmed.png";
+import CatSearch from "../components/CatSearch";
+import CatDisplay from "../components/CatDisplay";
+import "../styles/mediation-page.css"
 
 const crumbs = [
   {
@@ -38,30 +39,10 @@ function MediationPage() {
 
   const [allowRomantic, setAllowRomantic] = useState<boolean>(false);
 
-  const [selectedCat1, setSelectedCat1] = useState("");
-  const [selectedCat2, setSelectedCat2] = useState("");
-  const [selectedCat3, setSelectedCat3] = useState("");
+  const [selectedMediator, setSelectedMediator] = useState<string[]>([""]);
+  const [catsToMediate, setSelectedCats] = useState<string[]>(["", ""]);
 
-  const alreadyMediated = haveMediated(selectedCat3, selectedCat2, mediatedPairs);
-
-  // non-empty cats only
-  const selectedCats = [selectedCat1, selectedCat2, selectedCat3].filter(
-    (elem) => elem !== "",
-  );
-
-  const mediatorOptions: SelectOption[] = possibleMediators.map((cat) => {
-    return {
-      label: `${cat.name.display} - ${cat.status}`,
-      value: cat.ID,
-    };
-  });
-
-  const catOptions: SelectOption[] = possibleCats.map((cat) => {
-    return {
-      label: `${cat.name.display} - ${cat.status}`,
-      value: cat.ID,
-    };
-  });
+  const alreadyMediated = haveMediated(catsToMediate[0], catsToMediate[1], mediatedPairs);
 
   const [screenState, setScreenState] = useState("start");
 
@@ -70,9 +51,8 @@ function MediationPage() {
   const [isFirstLoad, setIsFirstLoad] = useState<boolean>(true);
 
   function reset() {
-    setSelectedCat1("");
-    setSelectedCat2("");
-    setSelectedCat3("");
+    setSelectedMediator([]);
+    setSelectedCats([]);
     setMediationText("");
     setScreenState("start");
 
@@ -100,9 +80,9 @@ function MediationPage() {
     }
     clangenRunner
       .mediate(
-        selectedCat1,
-        selectedCat2,
-        selectedCat3,
+        selectedMediator[0],
+        catsToMediate[0], 
+        catsToMediate[1],
         doSabotage,
         allowRomantic,
       )
@@ -144,44 +124,63 @@ function MediationPage() {
 
       <p>Any particular pair of cats can only be mediated once per moon.</p>
 
-      <fieldset>
+      <fieldset disabled={disabled}>
         <legend>Mediator</legend>
-        <div>
-          <Select
-            value={selectedCat1}
-            onChange={setSelectedCat1}
-            disabled={disabled}
-            options={mediatorOptions.filter(
-              (cat) =>
-                cat.value === selectedCat1 || !selectedCats.includes(cat.value),
-            )}
-          />
-        </div>
+        <CatSearch 
+          catsToSearch={possibleMediators.filter(cat => !catsToMediate.find(id => cat.ID == id))}
+          catsPerPage={16}
+          maxSelection={1}
+          selectedCats={selectedMediator}
+          setSelectedCats={setSelectedMediator}
+        />
+      </fieldset>
+
+      <fieldset disabled={disabled}>
+        <legend>Mediated</legend>
+        <CatSearch 
+          catsToSearch={possibleCats.filter(cat => cat.ID != selectedMediator[0])}
+          catsPerPage={16}
+          maxSelection={2}
+          selectedCats={catsToMediate}
+          setSelectedCats={setSelectedCats}
+        />
       </fieldset>
 
       <fieldset>
-        <legend>Mediated</legend>
-        <div>
-          <Select
-            value={selectedCat2}
-            onChange={setSelectedCat2}
-            disabled={disabled}
-            options={catOptions.filter(
-              (cat) =>
-                cat.value === selectedCat2 || !selectedCats.includes(cat.value),
-            )}
-          />
-        </div>
-        <div>
-          <Select
-            value={selectedCat3}
-            onChange={setSelectedCat3}
-            disabled={disabled}
-            options={catOptions.filter(
-              (cat) =>
-                cat.value === selectedCat3 || !selectedCats.includes(cat.value),
-            )}
-          />
+        <legend>Current Mediation</legend>
+        
+        <div className="mediated-cats-list">
+          {/* I'll improve this later, can't seem to think of a good way to implement it. */}
+          <div className="cat" key={0}>
+            {possibleCats
+            .filter(cat => catsToMediate.find(id => id == cat.ID))
+            .slice(0, 1).map((cat, index) => {
+              return (
+                <div className="cat" key={index}>
+                  <CatDisplay cat={cat} w="50px" h="50px" />
+                  <div>{cat.name.display}</div>
+                  <div className="cat-search-select-status">{cat.status}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="cat" key={0}>
+            <div>{alreadyMediated ? "X" : "⟷"}</div>
+            <div className="cat-search-select-status">{alreadyMediated && "Pair has already been mediated this moon."}</div>
+          </div>
+          <div className="cat" key={0}>
+            {possibleCats
+            .filter(cat => catsToMediate.find(id => id == cat.ID))
+            .slice(1, 2).map((cat, index) => {
+              return (
+                <div className="cat" key={index}>
+                  <CatDisplay cat={cat} w="50px" h="50px" />
+                  <div>{cat.name.display}</div>
+                  <div className="cat-search-select-status">{cat.status}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </fieldset>
 
@@ -194,22 +193,20 @@ function MediationPage() {
         />
       </fieldset>
 
-      {alreadyMediated && <p>This pair of cats has already been mediated together this moon.</p>}
-
       <p>{mediationText}</p>
 
       {screenState === "start" && (
         <div className="button-row">
           <button
             tabIndex={0}
-            disabled={selectedCats.length < 3 || alreadyMediated}
+            disabled={selectedMediator.length == 0 || catsToMediate.length < 2 || alreadyMediated}
             onClick={() => doMediate("mediate", allowRomantic)}
           >
             Mediate
           </button>
           <button
             tabIndex={0}
-            disabled={selectedCats.length < 3 || alreadyMediated}
+            disabled={selectedMediator.length == 0 || catsToMediate.length < 2 || alreadyMediated}
             onClick={() => doMediate("sabotage", allowRomantic)}
           >
             Sabotage
