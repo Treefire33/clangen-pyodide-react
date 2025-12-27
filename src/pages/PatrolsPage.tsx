@@ -152,6 +152,11 @@ function PatrolsPage() {
           maxSelection={6}
           selectedCats={selectedCats}
           setSelectedCats={setSelectedCats}
+          filtersToExclude={
+            {
+              "status": ["newborn", "kitten", "elder"]
+            }
+          }
         />
       </fieldset>
 

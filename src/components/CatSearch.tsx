@@ -11,13 +11,15 @@ function CatSearch({
   catsPerPage=16,
   maxSelection,
   selectedCats, 
-  setSelectedCats
+  setSelectedCats,
+  filtersToExclude = {}
 }: {
   catsToSearch: Cat[],
   catsPerPage: number,
   maxSelection: number,
   selectedCats: string[], 
-  setSelectedCats: Dispatch<SetStateAction<string[]>>
+  setSelectedCats: Dispatch<SetStateAction<string[]>>,
+  filtersToExclude: Record<string, string[]>
 }) {
   const [searchName, setSearchName] = useState("");
 
@@ -42,6 +44,19 @@ function CatSearch({
       mates: false,
     }
   });
+  
+  // Delete keys for excluded filters
+  for (const [category, excludedFilters] of Object.entries(filtersToExclude)) {
+    if (!(category in filtersToExclude)) {
+      continue;
+    }
+    excludedFilters.map((filterName) => {
+      if (!(filterName in filters[category])) {
+        return;
+      }
+      delete filters[category][filterName];
+    });
+  }
 
   const [currentPage, setCurrentPage] = useState<number>(0);
 
